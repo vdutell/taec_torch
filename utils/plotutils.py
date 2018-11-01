@@ -43,10 +43,12 @@ def plot_movies_recons(movie, recon, number, vectorize=True):
     plt.subplot(121)
     plt.imshow(movie, cmap='Greys_r')
     plt.axis('off')
+    plt.colorbar()
     
     plt.subplot(122)
     plt.imshow(recon, cmap='Greys_r')
     plt.axis('off')
+    plt.colorbar()
     
     plt.tight_layout()
 
@@ -104,11 +106,11 @@ def plot_temporal_weights(wmatrix):
     # data is of shape (frames,height,width)
     nframes = wmatrix.shape[1]
 
-    fig = plt.figure(figsize=(18,6));
+    fig = plt.figure(figsize=(18,6), dpi= 200);
 
 
     for frame in range(nframes):
         plt.subplot(1,nframes,frame+1);
-        plot_tiled_rfs(wmatrix[:,frame,:,:],colorbar=False);
+        plot_tiled_rfs(wmatrix[:,frame,:,:],rescale=True,colorbar=False);
 
     return(fig)
