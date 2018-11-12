@@ -38,15 +38,18 @@ def plot_movies_recons(movie, recon, number, vectorize=True):
     movie = np.reshape(movie, (frames, height*width)).T
     recon = np.reshape(recon, (frames, height*width)).T
     
+    
+    vmin = np.min(movie)
+    vmax = np.max(movie)
     fig = plt.figure(figsize=(10,6))
     
     plt.subplot(121)
-    plt.imshow(movie, cmap='Greys_r')
+    plt.imshow(movie, cmap='Greys_r', vmin=vmin, vmax=vmax)
     plt.axis('off')
     plt.colorbar()
     
     plt.subplot(122)
-    plt.imshow(recon, cmap='Greys_r')
+    plt.imshow(recon, cmap='Greys_r', vmin=vmin, vmax=vmax)
     plt.axis('off')
     plt.colorbar()
     
@@ -114,3 +117,13 @@ def plot_temporal_weights(wmatrix):
         plot_tiled_rfs(wmatrix[:,frame,:,:],rescale=True,colorbar=False);
 
     return(fig)
+
+def plot_one_temporal_weight(wmatrix):
+    '''
+    Plot a the temporal weight matrix for one hidden layer neuron
+    
+    Parameters
+        wmatrix (numpy array) of size [frames, x,y]
+    Returns
+        fig: plot figure
+    '''

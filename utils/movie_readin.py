@@ -1,6 +1,10 @@
 import numpy as np
 import imageio
 from scipy import stats
+import torch
+import torch.utils.data as data
+from torch.utils.data import Dataset, DataLoader
+from torch.autograd import Variable
 
 def readMovMp4(path, maxframes=4096):
     d = []
@@ -9,11 +13,11 @@ def readMovMp4(path, maxframes=4096):
         d.append(im)
         if(i>maxframes):
             break
-    print(np.shape(np.array(d)))
+    print(f'Full Movie Shape: {np.shape(np.array(d))}')
     return np.array(d)
      
 
-def get_movie(movie_fpath, pixel_patch_size, maxframes, frame_patch_size=120,
+def get_movie(movie_fpath, pixel_patch_size, maxframes, frame_patch_size=128,
              normalize_patch=False, normalize_movie=True, encoding='mp4', 
              crop=False):
 
@@ -25,7 +29,7 @@ def get_movie(movie_fpath, pixel_patch_size, maxframes, frame_patch_size=120,
         #maxframes = fps * 1 # 1 seconds
         m = readMovMp4(movie_fpath, maxframes)
         #np.shape(m)
-    # crop out the edges of the movie - they may be a bit blurry/distorted    
+    # crop out the edges of the movie - they may be a bit blurry/distorted due to moment lens abberation    
     if(crop):
         m = m[:,100:-100,300:-300]
         
@@ -62,6 +66,7 @@ def get_movie(movie_fpath, pixel_patch_size, maxframes, frame_patch_size=120,
         m = np.asarray(np.split(m[:,:,0:frame_patch_size*ftiles], ftiles,2)) #tile time-wise
         m = np.transpose(np.reshape(np.transpose(m,(4,5,3,0,1,2)),
                                    (pixel_patch_size, pixel_patch_size, frame_patch_size,-1)),(3,0,1,2)) #stack tiles together
+    
     #normalize patches
     if(normalize_patch):
         print('normalizing patches...')
@@ -72,7 +77,8 @@ def get_movie(movie_fpath, pixel_patch_size, maxframes, frame_patch_size=120,
         #invn = 1/np.prod([m.shape[1],m.shape[2],m.shape[3]])
         #m = np.nan_to_num(np.log(m))
         geom_means = stats.mstats.gmean(m+0.01,axis=(1,2,3))[:,np.newaxis,np.newaxis,np.newaxis]
-        print(np.min(geom_means))
+        #print(geom_means.shape)
+          #print(np.min(geom_means))
         m = m - np.nan_to_num(geom_means)
         
         m = m/(np.std(m)+0.1)
@@ -82,3 +88,31 @@ def get_movie(movie_fpath, pixel_patch_size, maxframes, frame_patch_size=120,
     np.random.shuffle(m)
         
     return(m)
+
+# make it a Pytorch dataset (inherits from Dataset)
+class NaturalMovieDataset(data.Dataset):
+    """Dataset of Stationary Naural Movies"""
+    
+    def __init__(self, movie_filepath, pixel_patchsize, frame_patchsize, maxframes,
+                     normalize_patch=True, normalize_movie=False, encoding='mp4'):
+        """
+        Args:
+            movie_filepath (string): Path to the movie file
+            pixel_patchsize (int): Number of pixels on the edge of a patch
+            frame_patchsize (int): Number of frames in the movie
+        """
+        self.movies = get_movie(movie_filepath, pixel_patchsize, maxframes,
+                                frame_patchsize, normalize_patch=normalize_patch,
+                                normalize_movie=normalize_movie, encoding='mp4',
+                                crop=True)
+
+    def __len__(self):
+        return len(self.movies)
+
+    def __getitem__(self, idx):
+        movie = self.movies[idx,:,:,:]
+        movie = torch.from_numpy(movie)
+        sample = Variable(movie)
+        return sample
+    
+    
