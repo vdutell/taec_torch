@@ -115,4 +115,23 @@ class NaturalMovieDataset(data.Dataset):
         sample = Variable(movie)
         return sample
     
+
+def CreateNatMovieDataset(framerate=240, patchsize=16, seconds=10, folder=None):
+    '''
+    Create a torch compatable dataset of natural movie patches
+    
+    Parameters:
+        framerate (int): frames per second of movie (120 or 240). Determines the dataset used
+        patchsize (int): number of pixels on an edge of a patch
+        seconds (float): number of seconds each patch corresponds to. Size of patch will be seconds*framerate.
+        
+    Returns:
+        dataset: An instance of NaturalMovieDataset with movie patches
+    '''
+    
+    # choose a folder to read in from if not specified
+    if(folder == None):
+        folder = '/home/vasha/research/datasets/stationary_motion/pixel2xlmomentlens/full_framerate'
+    
+    
     
