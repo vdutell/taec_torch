@@ -30,10 +30,10 @@ def plot_temporal_rf(imw_matrix, number, vectorize=False):
         
 def plot_movies_recons(movie, recon, number, vectorize=True): 
     
+    movienum, frames, height, width = np.shape(movie)
+    
     movie = np.array(movie[number].data)
     recon = np.array(recon[number].data)
-    
-    frames, height, width = np.shape(movie)
     
     movie = np.reshape(movie, (frames, height*width)).T
     recon = np.reshape(recon, (frames, height*width)).T
