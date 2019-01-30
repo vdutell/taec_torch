@@ -10,15 +10,20 @@ import cv2
 import pickle as pickle
 
 def script_to_fix_frame0():
-    folders = mru.listFolders('/home/vasha/research/datasets/stationary_motion/pixel2xlmomentlens/pngs')
+    folders = listFolders('/data/stationary_motion/pixel2xlmomentlens/pngs')
+    print(folders)
     for folder in folders:
-        frame = cv2.imread('/home/vasha/research/datasets/stationary_motion/pixel2xlmomentlens/pngs/'+folder+'/frame_0.png')
-        print(frame.shape)
-        newframe = oldframe[100:-100,300:-300,:]
-        #cv2.imwrite('/home/vasha/research/datasets/stationary_motion/pixel2xlmomentlens/backups/'+folder+'_frame_0.png',oldframe)
-        #cv2.imwrite('/home/vasha/research/datasets/stationary_motion/pixel2xlmomentlens/pngs/'+folder+'/frame_0.png',newframe)
-
-        #print(frame.shape)
+        path = f'/data/stationary_motion/pixel2xlmomentlens/pngs/{folder}'
+        print(path)
+        frame0 = cv2.imread(os.path.join(path,'frame_0.png'))
+        print(frame0.shape)
+        frame1 = cv2.imread(os.path.join(path,'frame_1.png'))
+        print(frame1.shape)
+        #newframe = frame0[100:-100,300:-300,:]
+        #print(newframe.shape)
+        #uncommment to write. may need to change permissions for success
+        #result = cv2.imwrite(os.path.join(path,'frame_0.png'),newframe)
+        #print(result)
 
 def readMovMp4(path, maxframes=4096, offset_frames=0):
     d = []
@@ -33,15 +38,17 @@ def readMovMp4(path, maxframes=4096, offset_frames=0):
     return np.array(d)
      
 def readMovPng(path, maxframes, offset_frames=0):
-    d = []
-    offset_frames = offset_frames+1 #zeroth frame hasn't been cropped :(
-    
+    pngpath = os.path.join(path, f'frame_0.png')
+    framew, frameh, framech = np.shape(cv2.imread(pngpath))
+    d = np.zeros((maxframes, framew, frameh, framech))
+    #offset_frames = offset_frames+1 #zeroth frame has now been cropped
     fnum = offset_frames
     while(fnum < maxframes+offset_frames):
         pngpath = os.path.join(path, f'frame_{fnum}.png')
         im = cv2.imread(pngpath)
         #print(im.shape)
-        d.append(im)
+        #d.append(im)
+        d[fnum-offset_frames] = im
         fnum +=1
     return np.array(d)
      
@@ -54,21 +61,20 @@ def get_movie(movie_fpath, pixel_patch_size,
     fps = 120
     degrees = 70 #degrees subtended by camera
     if(encoding=='mp4'):
-        m = readMovMp4(movie_fpath, maxframes, offset_frames)
+        m = np.asarray(readMovMp4(movie_fpath, maxframes, offset_frames))
     elif(encoding=='png'):
-        m = readMovPng(movie_fpath, maxframes, offset_frames)
+        m = np.asarray(readMovPng(movie_fpath, maxframes, offset_frames))
         #png formatted movies are already cropped.
         crop=False
         
     if(crop):
         m = m[:,100:-100,300:-300]
-        
+    
     nframes, frameh, framew, ncolorchannels = np.shape(m)
     ppd = frameh/degrees
 
     # remove color channel:
     m = np.mean(m,axis=3)
-
     #convert to degrees
     framewdeg = framew/ppd 
     framehdeg = frameh/ppd
@@ -132,7 +138,6 @@ def get_pkl_patch_movie(filepath):
     with open(patches_file, 'rb') as pickle_file:
         patches_dict = pickle.load(pickle_file)
     patches = patches_dict['patches']
-    print(patches.shape)
     return(patches)
     
 class NaturalMovieDataset(data.Dataset):
@@ -202,8 +207,8 @@ class NaturalMovieDatasetOneMovie(data.Dataset):
     def __getitem__(self, idx):
         movie = self.movies[idx,:,:,:]
         movie = torch.from_numpy(movie)
-        sample = Variable(movie)
-        return sample
+        #sample = Variable(movie)
+        return movie
     
     
 def listFiles(folder, searchterm=''):
@@ -242,7 +247,8 @@ def listFolders(folder, searchterm=''):
     folder_list = []
     for root, dirs, files in os.walk(folder, topdown=False):
         for adir in dirs:
-            folder_list.append(adir)
+            if(searchterm in adir):
+                folder_list.append(adir)
             #dirname = os.path.join(root,adir)
             #folder_list.append(dirname)
 
@@ -268,14 +274,14 @@ def createNatMoviePatches(framerate=120, patchsize=16, seconds=2, read_folder=No
     print('Creating Movie Patches....')
     # choose a folder to read in from if not specified
     if(read_folder == None):
-        read_folder = '/home/vasha/research/datasets/stationary_motion/pixel2xlmomentlens/pngs'
+        read_folder = '/data/stationary_motion/pixel2xlmomentlens/pngs'
     # movies are 240 frames (2 seconds) long *for now*
     max_framenumber = framerate*seconds
     offset_list = np.arange(0, max_framenumber, framerate*seconds)
     
     # choose a folder to write to if not specified
     if(write_folder == None):
-        write_folder = f'/home/vasha/research/datasets/stationary_motion/pixel2xlmomentlens/patches/patches_{patchsize}px_{seconds}s_{framerate}fps'
+        write_folder = f'/data/stationary_motion/pixel2xlmomentlens/patches/patches_{patchsize}px_{seconds}s_{framerate}fps'
     try:
         os.stat(write_folder)
     except:
@@ -284,6 +290,7 @@ def createNatMoviePatches(framerate=120, patchsize=16, seconds=2, read_folder=No
     # get list of movies
     #images_list = listFiles(read_folder, searchterm=str(framerate))
     movies_list = listFolders(read_folder, searchterm=str(framerate))
+    print(movies_list)
     #print(movies_list)
     # list of patches
     #patches_list = []

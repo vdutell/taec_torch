@@ -8,7 +8,6 @@ import numpy as np
 class AEC(nn.Module):
     def __init__(self, hidden_nodes, conv_width, pixel_patchsize, lambda_activation):
         super(AEC, self).__init__()
-        
 
         # model paramters
         self.hidden_nodes = hidden_nodes
@@ -39,10 +38,6 @@ class AEC(nn.Module):
     #                            self.tconv.weight) #tied weights
     #    return(out)
     
-    def format_data_torch(self, x):
-        x = torch.unsqueeze(torch.tensor(x),1)
-        x = Variable(x.float()).cuda()
-        return(x)
     
     def format_data_numpy(self, x):
         x = np.detach().cpu().numpy()
@@ -50,14 +45,11 @@ class AEC(nn.Module):
     
     def encode(self, x):
         noise = 0
-        x = x + noise
-        activations = F.relu(self.tconv(x))
-        return activations
+        return F.relu(self.tconv(x + noise))
 
     def decode(self, z):
-        recon = self.tdeconv(z) # non tied weights
         #recon = self.tdeconv_tied(z) # tied weights
-        return recon
+        return self.tdeconv(z)
 
     def forward(self, x):
         activations = self.encode(x)
@@ -69,7 +61,31 @@ class AEC(nn.Module):
 
     def loss_func(self, x, xhat, activations):
             #recon_loss = ((x[self.conv_width:-self.conv_width]-xhat[self.conv_width:-self.conv_width])**2).mean()
-            recon_loss = ((x-xhat)**2).mean()
+            recon_loss = nn.MSELoss()(xhat, x)
+            #a = nn.CrossEntropyLoss()(output_y, y_labels)
+            #recon_loss = ((x-xhat)**2).mean()
             activation_loss = torch.abs(activations).mean() * self.lambda_activation
             loss = recon_loss + activation_loss
+            #total_loss = sum(losses)
             return(loss)
+        
+    def calc_snr(self, x, xhat):
+        '''
+        Calculate the ssignal to noise ratio for a reconstructed signal
+        Params:
+            x(Array): The signal before transformation
+            x_hat (Array): The signal after transformation. Must be of same type of s.
+        Returns:
+            snr (float): The signal to noise ratio of the transformed signal s_prime
+        '''
+
+        #vectorize
+        x = x.flatten()
+        xhat = x.flatten()
+        #calc signal and noise
+        signal = x.mean()
+        noise = (xhat - x).std()
+        #calc their ratios
+        snr = 10*(signal/noise).log10()
+
+        return(snr)

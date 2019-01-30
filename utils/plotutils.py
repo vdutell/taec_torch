@@ -32,8 +32,8 @@ def plot_movies_recons(movie, recon, number, vectorize=True):
     
     movienum, frames, height, width = np.shape(movie)
     
-    movie = np.array(movie[number].data)
-    recon = np.array(recon[number].data)
+    movie = np.array(movie[number].cpu().data)
+    recon = np.array(recon[number].cpu().data)
     
     movie = np.reshape(movie, (frames, height*width)).T
     recon = np.reshape(recon, (frames, height*width)).T
@@ -93,10 +93,10 @@ def plot_tiled_rfs(data, rescale=False, normalize=False, colorbar=True):
     plt.yticks([])
     plt.tick_params(
         axis="both",
-        bottom="off",
-        top="off",
-        left="off",
-        right="off") 
+        bottom=False,
+        top=False,
+        left=False,
+        right=False) 
     plt.axis('off')
 
     if(colorbar):
