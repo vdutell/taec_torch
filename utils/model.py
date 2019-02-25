@@ -17,11 +17,9 @@ class AEC(nn.Module):
         self.lambda_activation = lambda_activation
         
         # model structure
-        self.tconv = nn.utils.weight_norm(nn.Conv3d(1,
-                                                   hidden_nodes, 
+        self.tconv = nn.utils.weight_norm(nn.Conv3d(1,hidden_nodes, 
                     kernel_size=self.temporal_conv_kernel_size,
-                                                   stride=1),
-                                        name='weight')
+                                                   stride=1),dim=0, name='weight')
         
         #self.tconv = nn.Conv3d(1,
         #                       hidden_nodes,
@@ -32,6 +30,7 @@ class AEC(nn.Module):
                                           1,
                                           kernel_size = np.transpose(self.temporal_conv_kernel_size),
                                           stride=1)
+        torch.nn.init.normal_(self.tconv.weight, mean=0, std=1)
         
     #def tdeconv_tied(self, acts):
     #    out = F.conv_transpose3d(acts,
@@ -64,8 +63,11 @@ class AEC(nn.Module):
             recon_loss = nn.MSELoss()(xhat, x)
             #a = nn.CrossEntropyLoss()(output_y, y_labels)
             #recon_loss = ((x-xhat)**2).mean()
-            activation_loss = torch.abs(activations).mean() * self.lambda_activation
-            loss = recon_loss + activation_loss
+            mean_activation = activations.mean((0,2)) #reduce over time and batch
+            goal_activation = torch.ones_like(mean_activation) #goal is mean 1 per neuron
+            activation_loss = torch.abs(mean_activation - goal_activation).mean() #take mean of devaition for each neuron
+            #activation_loss = self.lambda_activation * (torch.abs(activations) - )
+            loss = recon_loss + 1000 * activation_loss
             #total_loss = sum(losses)
             return(loss)
         

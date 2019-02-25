@@ -137,7 +137,7 @@ def get_pkl_patch_movie(filepath):
     patches_file = os.path.join(filepath, f'patchset_0.pkl')
     with open(patches_file, 'rb') as pickle_file:
         patches_dict = pickle.load(pickle_file)
-    patches = patches_dict['patches']
+    patches = patches_dict['patches'].astype(np.float32)
     return(patches)
     
 class NaturalMovieDataset(data.Dataset):
