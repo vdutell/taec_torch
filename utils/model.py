@@ -67,7 +67,7 @@ class AEC(nn.Module):
             goal_activation = torch.ones_like(mean_activation) #goal is mean 1 per neuron
             activation_loss = torch.abs(mean_activation - goal_activation).mean() #take mean of devaition for each neuron
             #activation_loss = self.lambda_activation * (torch.abs(activations) - )
-            loss = recon_loss + 1000 * activation_loss
+            loss = recon_loss + 1 * activation_loss
             #total_loss = sum(losses)
             return(loss)
         
