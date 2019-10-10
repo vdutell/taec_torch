@@ -127,3 +127,17 @@ def plot_one_temporal_weight(wmatrix):
     Returns
         fig: plot figure
     '''
+
+def plot_flow_weights(wmatrix):
+    '''
+    Plot the weight matrices for set of wmatrices
+    
+    Parameters
+        wmatrix (numpy array) of size [frames, x,y, 2w(u&v)]
+    Returns
+        fig: plot figure
+    '''
+    
+    
+    
+    

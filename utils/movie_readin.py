@@ -54,7 +54,7 @@ def readMovPng(path, maxframes, offset_frames=0):
      
 
 def get_movie(movie_fpath, pixel_patch_size, 
-              maxframes, frame_size=128,normalize_patch=False, 
+              maxframes, frame_size=128, normalize_patch=False, 
               normalize_movie=False, encoding='png', 
               crop=False, offset_frames=0, verbose=False):
     # info about movie
@@ -89,7 +89,7 @@ def get_movie(movie_fpath, pixel_patch_size,
         if(verbose):
             print('normalizing movie...')
         m = m - np.mean(m)
-        m = m/(np.std(m)+0.1)
+        m = m/(np.std(m)+0.001)
     
     #make patches
     if (pixel_patch_size != None):
@@ -116,9 +116,9 @@ def get_movie(movie_fpath, pixel_patch_size,
         #invn = 1/np.prod([m.shape[1],m.shape[2],m.shape[3]])
         #m = np.nan_to_num(np.log(m))
         geom_means = stats.mstats.gmean(m+0.01,axis=(1,2,3))[:,np.newaxis,np.newaxis,np.newaxis]
-        m = m - np.nan_to_num(geom_means)
         
-        m = m/(np.std(m)+0.1)
+        m = m - np.nan_to_num(geom_means)
+        m = m/(np.std(m))
         
     #transpose & shuffle
     m = np.transpose(m, (0, 3, 1, 2)) #change axis to [batchsize, frame_size, x_patchsize, y_patchsize]
@@ -290,7 +290,6 @@ def createNatMoviePatches(framerate=120, patchsize=16, seconds=2, read_folder=No
     # get list of movies
     #images_list = listFiles(read_folder, searchterm=str(framerate))
     movies_list = listFolders(read_folder, searchterm=str(framerate))
-    print(movies_list)
     #print(movies_list)
     # list of patches
     #patches_list = []
@@ -323,7 +322,7 @@ def createNatMoviePatches(framerate=120, patchsize=16, seconds=2, read_folder=No
             m = get_movie(movie_path, patchsize, 
                           maxframes = framerate*seconds,
                           frame_size = framerate*seconds,
-                          normalize_patch=False,
+                          normalize_patch=True,
                           normalize_movie=False,
                           encoding='png', crop=True,
                           offset_frames=offset,

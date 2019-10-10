@@ -6,7 +6,7 @@ from torch import nn
 import numpy as np
     
 class AEC(nn.Module):
-    def __init__(self, hidden_nodes, conv_width, pixel_patchsize, lambda_activation):
+    def __init__(self, hidden_nodes, conv_width, pixel_patchsize, lambda_activation, noise_level):
         super(AEC, self).__init__()
 
         # model paramters
@@ -14,12 +14,15 @@ class AEC(nn.Module):
         self.conv_width = conv_width
         self.pixel_patchsize = pixel_patchsize
         self.temporal_conv_kernel_size = (conv_width, pixel_patchsize, pixel_patchsize)
+        #self.input_size = (1, conv_width, pixel_patchsize, pixel_patchsize)
         self.lambda_activation = lambda_activation
+        self.noise_level = noise_level
         
         # model structure
         self.tconv = nn.utils.weight_norm(nn.Conv3d(1,hidden_nodes, 
                     kernel_size=self.temporal_conv_kernel_size,
                                                    stride=1),dim=0, name='weight')
+        
         
         #self.tconv = nn.Conv3d(1,
         #                       hidden_nodes,
@@ -31,6 +34,7 @@ class AEC(nn.Module):
                                           kernel_size = np.transpose(self.temporal_conv_kernel_size),
                                           stride=1)
         torch.nn.init.normal_(self.tconv.weight, mean=0, std=1)
+
         
     #def tdeconv_tied(self, acts):
     #    out = F.conv_transpose3d(acts,
@@ -43,7 +47,7 @@ class AEC(nn.Module):
         return(x)
     
     def encode(self, x):
-        noise = 0
+        noise = torch.randn(x.size()).to('cuda')*self.noise_level
         return F.relu(self.tconv(x + noise))
 
     def decode(self, z):
@@ -67,7 +71,7 @@ class AEC(nn.Module):
             goal_activation = torch.ones_like(mean_activation) #goal is mean 1 per neuron
             activation_loss = torch.abs(mean_activation - goal_activation).mean() #take mean of devaition for each neuron
             #activation_loss = self.lambda_activation * (torch.abs(activations) - )
-            loss = recon_loss + 1 * activation_loss
+            loss = recon_loss + self.lambda_activation * activation_loss
             #total_loss = sum(losses)
             return(loss)
         
