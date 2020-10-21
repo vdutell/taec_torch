@@ -6,7 +6,7 @@ from torch import nn
 import numpy as np
     
 class AEC(nn.Module):
-    def __init__(self, hidden_nodes, conv_width, pixel_patchsize, lambda_activation, noise_level):
+    def __init__(self, hidden_nodes, conv_width, pixel_patchsize, lambda_activation, noise_level, cuda_device='cuda:0'):
         super(AEC, self).__init__()
 
         # model paramters
@@ -14,12 +14,12 @@ class AEC(nn.Module):
         self.conv_width = conv_width
         self.pixel_patchsize = pixel_patchsize
         self.temporal_conv_kernel_size = (conv_width, pixel_patchsize, pixel_patchsize)
-        #self.input_size = (1, conv_width, pixel_patchsize, pixel_patchsize)
         self.lambda_activation = lambda_activation
         self.noise_level = noise_level
+        self.cuda_device = cuda_device
         
         # model structure
-        self.tconv = nn.utils.weight_norm(nn.Conv3d(1,hidden_nodes, 
+        self.tconv = nn.utils.weight_norm(nn.Conv3d(1, hidden_nodes, 
                     kernel_size=self.temporal_conv_kernel_size,
                                                    stride=1),dim=0, name='weight')
         
@@ -47,8 +47,9 @@ class AEC(nn.Module):
         return(x)
     
     def encode(self, x):
-        noise = torch.randn(x.size()).to('cuda')*self.noise_level
-        return F.relu(self.tconv(x + noise))
+        #noise = torch.randn(x.size()).to(self.cuda_device)*self.noise_level
+        #return F.relu(self.tconv(x + noise))
+        return F.relu(self.tconv(x))
 
     def decode(self, z):
         #recon = self.tdeconv_tied(z) # tied weights
