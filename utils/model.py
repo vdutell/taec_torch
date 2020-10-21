@@ -76,23 +76,31 @@ class AEC(nn.Module):
             #total_loss = sum(losses)
             return(loss)
         
-    def calc_snr(self, x, xhat):
-        '''
-        Calculate the ssignal to noise ratio for a reconstructed signal
-        Params:
-            x(Array): The signal before transformation
-            x_hat (Array): The signal after transformation. Must be of same type of s.
-        Returns:
-            snr (float): The signal to noise ratio of the transformed signal s_prime
-        '''
+#     def calc_snr(self, x, xhat):
+#         '''
+#         Calculate the ssignal to noise ratio for a reconstructed signal
+#         Params:
+#             x(Array): The signal before transformation
+#             x_hat (Array): The signal after transformation. Must be of same type of s.
+#         Returns:
+#             snr (float): The signal to noise ratio of the transformed signal s_prime
+#         '''
 
-        #vectorize
-        x = x.flatten()
-        xhat = x.flatten()
-        #calc signal and noise
-        signal = x.mean()
-        noise = (xhat - x).std()
-        #calc their ratios
-        snr = 10*(signal/noise).log10()
+#         #vectorize
+#         x = x.flatten()
+#         xhat = xhat.flatten()
+#         #calc signal and noise
+#         signal = x.mean()
+#         noise = (xhat - x).std()
+#         #calc their ratios
+#         snr = 10*(signal/noise).log10()
 
-        return(snr)
+#         return(snr)
+
+
+
+    def calc_psnr(self, signal, ground_truth):
+        mse = np.sum(np.subtract(signal,ground_truth)**2)/(np.shape(signal.flatten()))
+        sigrange = np.max(signal)-np.min(signal)
+        psnr = 10*np.log10(sigrange/mse)
+        return(psnr)

@@ -43,7 +43,15 @@ class VideoDataset(Dataset):
             tensor = (tensor - mean) / std
             return(tensor)
         
+        def randcrop(tensor):
+            _, _, xshape, yshape = tensor.shape
+            randx = np.random.randint(0,xshape-self.patch_size)
+            randy = np.random.randint(0,yshape-self.patch_size)
+            tensor = tensor[:,:,randx:randx+self.patch_size,randy:randy+self.patch_size]
+            return(tensor)
+        
         self.normfunc = meanstdnorm
+        self.cropfunc = randcrop
 
     def __len__(self):
         return self.range
@@ -55,11 +63,10 @@ class VideoDataset(Dataset):
         #    frame = Image.open(self.png_paths[idx+i])
         #    frames.append(TF.to_tensor(frame))
         frames = torch.stack([TF.to_tensor(Image.open(self.png_paths[idx+i])).squeeze(0) for i in range(self.nframes)]).unsqueeze(0)
-        frames = frames[:,:,:self.patch_size,:self.patch_size]
         sample = {'frames': frames}
+        sample['frames'] = self.cropfunc(sample['frames'])
         if self.norm:
             sample['frames'] = self.normfunc(sample['frames'])
-
         if self.transform:
             sample['frames'] = self.transform(sample['frames'])
         return(sample)
